@@ -1,0 +1,45 @@
+{
+  "name": "@mestuka/redux-state-sync",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "Library wrapper for redux-state-sync",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix ."
+  },
+  "peerDependencies": {
+    "@reduxjs/toolkit": "^2.13.0",
+    "broadcast-channel": "^7.0.1",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "redux": "^5.0.1"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^9.5.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "eslint": "^10.11.0",
+    "eslint-plugin-format": "^2.0.1",
+    "typescript": "^6.0.2",
+    "vite": "^8.3.1",
+    "vite-plugin-dts": "^5.1.1",
+    "vitest": "^5.0.3"
+  }
+}
