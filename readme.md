@@ -10,8 +10,7 @@ A lightweight middleware to sync your Redux state across browser tabs with **ful
 
 > **📦 This is a modern refactor of [AOHUA/redux-state-sync](https://github.com/AOHUA/redux-state-sync)** — bringing the package up to date with full TypeScript generics, modern tooling, and comprehensive test coverage for production use.
 
-[<img src="https://img.shields.io/travis/AOHUA/redux-state-sync.svg" alt="Build Status">](https://travis-ci.org/AOHUA/redux-state-sync)
-[<img src="https://img.shields.io/npm/dm/redux-state-sync.svg" alt="Downloads">](https://www.npmjs.com/package/redux-state-sync)
+[<img src="https://img.shields.io/npm/dm/redux-state-sync.svg" alt="Downloads">](https://www.npmjs.com/package/@mestuka/redux-state-sync)
 
 ### Why Redux-State-Sync?
 
