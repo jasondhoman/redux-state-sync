@@ -1,7 +1,7 @@
 {
   "name": "@mestuka/redux-state-sync",
   "type": "module",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Library wrapper for redux-state-sync",
   "license": "MIT",
   "repository": {
