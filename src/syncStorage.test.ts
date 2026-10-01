@@ -2,7 +2,7 @@ import type { UnknownAction } from 'redux';
 
 import { describe, expect, it } from 'vitest';
 
-import { createStateSyncMiddleware, generateUuidForAction, isActionAllowed } from './syncState';
+import { createStateSyncMiddleware, generateUuidForAction, isActionAllowed } from './index';
 
 describe('action should have uuid', () => {
   it('action should have both $uuid and $window_uid', () => {

@@ -1,0 +1,640 @@
+//#region node_modules/.pnpm/broadcast-channel@7.4.0/node_modules/broadcast-channel/dist/esbrowser/util.js
+function e(e) {
+	return e && typeof e.then == "function";
+}
+Promise.resolve(!1), Promise.resolve(!0);
+var t = Promise.resolve();
+function n(e, t) {
+	return e ||= 0, new Promise(function(n) {
+		return setTimeout(function() {
+			return n(t);
+		}, e);
+	});
+}
+function r(e, t) {
+	return Math.floor(Math.random() * (t - e + 1) + e);
+}
+function i() {
+	return Math.random().toString(36).substring(2);
+}
+var a = 0;
+function o() {
+	var e = Date.now() * 1e3;
+	return e <= a && (e = a + 1), a = e, e;
+}
+//#endregion
+//#region node_modules/.pnpm/broadcast-channel@7.4.0/node_modules/broadcast-channel/dist/esbrowser/methods/native.js
+var s = o, ee = "native";
+function te(e) {
+	var t = {
+		time: o(),
+		messagesCallback: null,
+		bc: new BroadcastChannel(e),
+		subFns: []
+	};
+	return t.bc.onmessage = function(e) {
+		t.messagesCallback && t.messagesCallback(e.data);
+	}, t;
+}
+function ne(e) {
+	e.bc.close(), e.subFns = [];
+}
+function re(e, n) {
+	try {
+		return e.bc.postMessage(n, !1), t;
+	} catch (e) {
+		return Promise.reject(e);
+	}
+}
+function c(e, t) {
+	e.messagesCallback = t;
+}
+function ie() {
+	if (typeof globalThis < "u" && globalThis.Deno && globalThis.Deno.args) return !0;
+	if ((typeof window < "u" || typeof self < "u") && typeof BroadcastChannel == "function") {
+		if (BroadcastChannel._pubkey) throw Error("BroadcastChannel: Do not overwrite window.BroadcastChannel with this module, this is not a polyfill");
+		return !0;
+	}
+	return !1;
+}
+function ae() {
+	return 150;
+}
+var oe = {
+	create: te,
+	close: ne,
+	onMessage: c,
+	postMessage: re,
+	canBeUsed: ie,
+	type: ee,
+	averageResponseTime: ae,
+	microSeconds: s
+}, l = class {
+	ttl;
+	map = /* @__PURE__ */ new Map();
+	_to = !1;
+	constructor(e) {
+		this.ttl = e;
+	}
+	has(e) {
+		let t = this.map.get(e);
+		return t === void 0 ? !1 : t < u() - this.ttl ? (this.map.delete(e), !1) : !0;
+	}
+	add(e) {
+		this.map.delete(e), this.map.set(e, u()), this._to || (this._to = !0, setTimeout(() => {
+			this._to = !1, se(this);
+		}, 0));
+	}
+	clear() {
+		this.map.clear();
+	}
+};
+function se(e) {
+	let t = u() - e.ttl, n = e.map[Symbol.iterator]();
+	for (;;) {
+		let r = n.next().value;
+		if (!r) break;
+		let i = r[0];
+		if (r[1] < t) e.map.delete(i);
+		else break;
+	}
+}
+function u() {
+	return Date.now();
+}
+//#endregion
+//#region node_modules/.pnpm/broadcast-channel@7.4.0/node_modules/broadcast-channel/dist/esbrowser/options.js
+function d() {
+	var e = arguments.length > 0 && arguments[0] !== void 0 ? arguments[0] : {}, t = JSON.parse(JSON.stringify(e));
+	return t.webWorkerSupport === void 0 && (t.webWorkerSupport = !0), t.idb ||= {}, t.idb.ttl || (t.idb.ttl = 45e3), t.idb.fallbackInterval || (t.idb.fallbackInterval = 150), e.idb && typeof e.idb.onclose == "function" && (t.idb.onclose = e.idb.onclose), t.localstorage ||= {}, t.localstorage.removeTimeout || (t.localstorage.removeTimeout = 6e4), e.methods && (t.methods = e.methods), t.node ||= {}, t.node.ttl || (t.node.ttl = 12e4), t.node.maxParallelWrites || (t.node.maxParallelWrites = 2048), t.node.useFastPath === void 0 && (t.node.useFastPath = !0), t;
+}
+//#endregion
+//#region node_modules/.pnpm/broadcast-channel@7.4.0/node_modules/broadcast-channel/dist/esbrowser/methods/indexed-db.js
+var ce = o, f = "pubkey.broadcast-channel-0-", p = "messages", m = { durability: "relaxed" };
+function h() {
+	if (typeof indexedDB < "u") return indexedDB;
+	if (typeof window < "u") {
+		if (window.mozIndexedDB !== void 0) return window.mozIndexedDB;
+		if (window.webkitIndexedDB !== void 0) return window.webkitIndexedDB;
+		if (window.msIndexedDB !== void 0) return window.msIndexedDB;
+	}
+	return !1;
+}
+function g(e) {
+	e.commit && e.commit();
+}
+function _(e) {
+	var t = h(), n = f + e, r = t.open(n);
+	return r.onupgradeneeded = function(e) {
+		e.target.result.createObjectStore(p, {
+			keyPath: "id",
+			autoIncrement: !0
+		});
+	}, new Promise(function(e, t) {
+		r.onerror = function(e) {
+			return t(e);
+		}, r.onsuccess = function() {
+			e(r.result);
+		};
+	});
+}
+function le(e, t, n) {
+	var r = {
+		uuid: t,
+		time: Date.now(),
+		data: n
+	}, i = e.transaction([p], "readwrite", m);
+	return new Promise(function(e, t) {
+		i.oncomplete = function() {
+			return e();
+		}, i.onerror = function(e) {
+			return t(e);
+		}, i.objectStore(p).add(r), g(i);
+	});
+}
+function ue(e, t) {
+	var n = e.transaction(p, "readonly", m), r = n.objectStore(p), i = [], a = IDBKeyRange.bound(t + 1, Infinity);
+	if (r.getAll) {
+		var o = r.getAll(a);
+		return new Promise(function(e, t) {
+			o.onerror = function(e) {
+				return t(e);
+			}, o.onsuccess = function(t) {
+				e(t.target.result);
+			};
+		});
+	}
+	function s() {
+		try {
+			return a = IDBKeyRange.bound(t + 1, Infinity), r.openCursor(a);
+		} catch {
+			return r.openCursor();
+		}
+	}
+	return new Promise(function(e, r) {
+		var a = s();
+		a.onerror = function(e) {
+			return r(e);
+		}, a.onsuccess = function(r) {
+			var a = r.target.result;
+			a ? a.value.id < t + 1 ? a.continue(t + 1) : (i.push(a.value), a.continue()) : (g(n), e(i));
+		};
+	});
+}
+function de(e, t) {
+	if (e.closed) return Promise.resolve([]);
+	var n = e.db.transaction(p, "readwrite", m).objectStore(p);
+	return Promise.all(t.map(function(e) {
+		var t = n.delete(e);
+		return new Promise(function(e) {
+			t.onsuccess = function() {
+				return e();
+			};
+		});
+	}));
+}
+function fe(e, t) {
+	var n = Date.now() - t, r = e.transaction(p, "readonly", m), i = r.objectStore(p), a = [];
+	return new Promise(function(e) {
+		i.openCursor().onsuccess = function(t) {
+			var i = t.target.result;
+			if (i) {
+				var o = i.value;
+				o.time < n ? (a.push(o), i.continue()) : (g(r), e(a));
+			} else e(a);
+		};
+	});
+}
+function pe(e) {
+	return fe(e.db, e.options.idb.ttl).then(function(t) {
+		return de(e, t.map(function(e) {
+			return e.id;
+		}));
+	});
+}
+function me(e, n) {
+	return n = d(n), _(e).then(function(r) {
+		var a = {
+			closed: !1,
+			lastCursorId: 0,
+			channelName: e,
+			options: n,
+			uuid: i(),
+			eMIs: new l(n.idb.ttl * 2),
+			writeBlockPromise: t,
+			messagesCallback: null,
+			readQueuePromises: [],
+			db: r
+		};
+		return r.onclose = function() {
+			a.closed = !0, n.idb.onclose && n.idb.onclose();
+		}, v(a), a;
+	});
+}
+function v(e) {
+	e.closed || y(e).then(function() {
+		return n(e.options.idb.fallbackInterval);
+	}).then(function() {
+		return v(e);
+	});
+}
+function he(e, t) {
+	return !(e.uuid === t.uuid || t.eMIs.has(e.id) || e.data.time < t.messagesCallbackTime);
+}
+function y(e) {
+	return e.closed || !e.messagesCallback ? t : ue(e.db, e.lastCursorId).then(function(n) {
+		return n.filter(function(e) {
+			return !!e;
+		}).map(function(t) {
+			return t.id > e.lastCursorId && (e.lastCursorId = t.id), t;
+		}).filter(function(t) {
+			return he(t, e);
+		}).sort(function(e, t) {
+			return e.time - t.time;
+		}).forEach(function(t) {
+			e.messagesCallback && (e.eMIs.add(t.id), e.messagesCallback(t.data));
+		}), t;
+	});
+}
+function ge(e) {
+	e.closed = !0, e.db.close();
+}
+function _e(e, t) {
+	return e.writeBlockPromise = e.writeBlockPromise.then(function() {
+		return le(e.db, e.uuid, t);
+	}).then(function() {
+		r(0, 10) === 0 && pe(e);
+	}), e.writeBlockPromise;
+}
+function ve(e, t, n) {
+	e.messagesCallbackTime = n, e.messagesCallback = t, y(e);
+}
+function ye() {
+	return !!h();
+}
+function be(e) {
+	return e.idb.fallbackInterval * 2;
+}
+var xe = {
+	create: me,
+	close: ge,
+	onMessage: ve,
+	postMessage: _e,
+	canBeUsed: ye,
+	type: "idb",
+	averageResponseTime: be,
+	microSeconds: ce
+}, Se = o, Ce = "pubkey.broadcastChannel-", we = "localstorage";
+function b() {
+	var e;
+	if (typeof window > "u") return null;
+	try {
+		e = window.localStorage, e = window["ie8-eventlistener/storage"] || window.localStorage;
+	} catch {}
+	return e;
+}
+function x(e) {
+	return Ce + e;
+}
+function S(e, t) {
+	return new Promise(function(r) {
+		n().then(function() {
+			var n = x(e.channelName), a = {
+				token: i(),
+				time: Date.now(),
+				data: t,
+				uuid: e.uuid
+			}, o = JSON.stringify(a);
+			b().setItem(n, o);
+			var s = document.createEvent("Event");
+			s.initEvent("storage", !0, !0), s.key = n, s.newValue = o, window.dispatchEvent(s), r();
+		});
+	});
+}
+function C(e, t) {
+	var n = x(e), r = function(e) {
+		e.key === n && t(JSON.parse(e.newValue));
+	};
+	return window.addEventListener("storage", r), r;
+}
+function w(e) {
+	window.removeEventListener("storage", e);
+}
+function T(e, t) {
+	if (t = d(t), !O()) throw Error("BroadcastChannel: localstorage cannot be used");
+	var n = i(), r = new l(t.localstorage.removeTimeout), a = {
+		channelName: e,
+		uuid: n,
+		eMIs: r
+	};
+	return a.listener = C(e, function(e) {
+		a.messagesCallback && e.uuid !== n && e.token && !r.has(e.token) && (e.data.time && e.data.time < a.messagesCallbackTime || (r.add(e.token), a.messagesCallback(e.data)));
+	}), a;
+}
+function E(e) {
+	w(e.listener);
+}
+function D(e, t, n) {
+	e.messagesCallbackTime = n, e.messagesCallback = t;
+}
+function O() {
+	var e = b();
+	if (!e) return !1;
+	try {
+		var t = "__broadcastchannel_check";
+		e.setItem(t, "works"), e.removeItem(t);
+	} catch {
+		return !1;
+	}
+	return !0;
+}
+function k() {
+	var e = 120, t = navigator.userAgent.toLowerCase();
+	return t.includes("safari") && !t.includes("chrome") ? e * 2 : e;
+}
+var Te = {
+	create: T,
+	close: E,
+	onMessage: D,
+	postMessage: S,
+	canBeUsed: O,
+	type: we,
+	averageResponseTime: k,
+	microSeconds: Se
+}, A = o, Ee = "simulate", j = /* @__PURE__ */ new Set();
+function De(e) {
+	var t = {
+		time: A(),
+		name: e,
+		messagesCallback: null
+	};
+	return j.add(t), t;
+}
+function Oe(e) {
+	j.delete(e);
+}
+function ke(e, t) {
+	return new Promise(function(n) {
+		return setTimeout(function() {
+			Array.from(j).forEach(function(n) {
+				n.name === e.name && n !== e && n.messagesCallback && n.time < t.time && n.messagesCallback(t);
+			}), n();
+		}, 5);
+	});
+}
+function Ae(e, t) {
+	e.messagesCallback = t;
+}
+function M() {
+	return !0;
+}
+function je() {
+	return 5;
+}
+var Me = {
+	create: De,
+	close: Oe,
+	onMessage: Ae,
+	postMessage: ke,
+	canBeUsed: M,
+	type: Ee,
+	averageResponseTime: je,
+	microSeconds: A
+}, N = [
+	oe,
+	xe,
+	Te
+];
+function Ne(e) {
+	var t = [].concat(e.methods, N).filter(Boolean);
+	if (e.type) {
+		if (e.type === "simulate") return Me;
+		var n = t.find(function(t) {
+			return t.type === e.type;
+		});
+		if (n) return n;
+		throw Error("method-type " + e.type + " not found");
+	}
+	e.webWorkerSupport || (t = t.filter(function(e) {
+		return e.type !== "idb";
+	}));
+	var r = t.find(function(e) {
+		return e.canBeUsed();
+	});
+	if (r) return r;
+	throw Error("No usable method found in " + JSON.stringify(N.map(function(e) {
+		return e.type;
+	})));
+}
+//#endregion
+//#region node_modules/.pnpm/broadcast-channel@7.4.0/node_modules/broadcast-channel/dist/esbrowser/broadcast-channel.js
+var P = /* @__PURE__ */ new Set(), Pe = 0, F = function(e, t) {
+	this.id = Pe++, P.add(this), this.name = e, I && (t = I), this.options = d(t), this.method = Ne(this.options), this._iL = !1, this._onML = null, this._addEL = {
+		message: [],
+		internal: []
+	}, this._uMP = /* @__PURE__ */ new Set(), this._befC = [], this._prepP = null, Fe(this);
+};
+F._pubkey = !0;
+var I;
+F.prototype = {
+	postMessage: function(e) {
+		if (this.closed) throw Error("BroadcastChannel.postMessage(): Cannot post message after channel has closed " + JSON.stringify(e));
+		return L(this, "message", e);
+	},
+	postInternal: function(e) {
+		return L(this, "internal", e);
+	},
+	set onmessage(e) {
+		var t = {
+			time: this.method.microSeconds(),
+			fn: e
+		};
+		B(this, "message", this._onML), e && typeof e == "function" ? (this._onML = t, z(this, "message", t)) : this._onML = null;
+	},
+	addEventListener: function(e, t) {
+		var n = {
+			time: this.method.microSeconds(),
+			fn: t
+		};
+		z(this, e, n);
+	},
+	removeEventListener: function(e, t) {
+		var n = this._addEL[e].find(function(e) {
+			return e.fn === t;
+		});
+		B(this, e, n);
+	},
+	close: function() {
+		var e = this;
+		if (!this.closed) {
+			P.delete(this), this.closed = !0;
+			var n = this._prepP ? this._prepP : t;
+			return this._onML = null, this._addEL.message = [], n.then(function() {
+				return Promise.all(Array.from(e._uMP));
+			}).then(function() {
+				return Promise.all(e._befC.map(function(e) {
+					return e();
+				}));
+			}).then(function() {
+				return e.method.close(e._state);
+			});
+		}
+	},
+	get type() {
+		return this.method.type;
+	},
+	get isClosed() {
+		return this.closed;
+	}
+};
+function L(e, n, r) {
+	var i = {
+		time: e.method.microSeconds(),
+		type: n,
+		data: r
+	};
+	return (e._prepP ? e._prepP : t).then(function() {
+		var t = e.method.postMessage(e._state, i);
+		return e._uMP.add(t), t.catch().then(function() {
+			return e._uMP.delete(t);
+		}), t;
+	});
+}
+function Fe(t) {
+	var n = t.method.create(t.name, t.options);
+	e(n) ? (t._prepP = n, n.then(function(e) {
+		t._state = e;
+	})) : t._state = n;
+}
+function R(e) {
+	return e._addEL.message.length > 0 || e._addEL.internal.length > 0;
+}
+function z(e, t, n) {
+	e._addEL[t].push(n), Ie(e);
+}
+function B(e, t, n) {
+	e._addEL[t] = e._addEL[t].filter(function(e) {
+		return e !== n;
+	}), Le(e);
+}
+function Ie(e) {
+	if (!e._iL && R(e)) {
+		var t = function(t) {
+			e._addEL[t.type].forEach(function(e) {
+				t.time >= e.time && e.fn(t.data);
+			});
+		}, n = e.method.microSeconds();
+		e._prepP ? e._prepP.then(function() {
+			e._iL = !0, e.method.onMessage(e._state, t, n);
+		}) : (e._iL = !0, e.method.onMessage(e._state, t, n));
+	}
+}
+function Le(e) {
+	if (e._iL && !R(e)) {
+		e._iL = !1;
+		var t = e.method.microSeconds();
+		e.method.onMessage(e._state, null, t);
+	}
+}
+//#endregion
+//#region src/index.ts
+var V = "", H = "&_GET_INIT_STATE", U = "&_SEND_INIT_STATE", W = "&_RECEIVE_INIT_STATE", G = "&_INIT_MESSAGE_LISTENER", K = {
+	channel: "redux-state-sync",
+	predicate: null,
+	blacklist: [],
+	whitelist: [],
+	broadcastChannelOptions: void 0,
+	prepareState: (e) => e,
+	receiveState: (e, t) => t
+};
+function Re() {
+	return { type: H };
+}
+function ze() {
+	return { type: U };
+}
+function q(e) {
+	return {
+		type: W,
+		payload: e
+	};
+}
+function Be() {
+	return { type: G };
+}
+function J() {
+	return Math.floor((1 + Math.random()) * 65536).toString(16).substring(1);
+}
+function Y() {
+	return `${J() + J()}-${J()}-${J()}-${J()}-${J()}${J()}${J()}`;
+}
+var X = Y();
+function Z(e) {
+	let t = e;
+	return t.$uuid = Y(), t.$window_uid = X, t;
+}
+function Q({ predicate: e, blacklist: t, whitelist: n }) {
+	let r = (e) => !0;
+	return e && typeof e == "function" ? r = e : Array.isArray(t) && t.length > 0 ? r = (e) => !t.includes(e.type) : Array.isArray(n) && n.length > 0 && (r = (e) => n.includes(e.type)), r;
+}
+function Ve(e) {
+	return !!e.$isSynced;
+}
+var He = class {
+	constructor(e) {
+		this.options = e, this.isSynced = !1, this.tabs = {}, this.handleMessage = (e) => {
+			let { dispatch: t, allowed: n } = this.options;
+			if (e.$window_uid !== X && e.type !== "&_RECEIVE_INIT_STATE") {
+				if (e.$uuid && e.$uuid !== V) {
+					if (e.type === "&_GET_INIT_STATE" && !this.tabs[e.$window_uid]) this.tabs[e.$window_uid] = !0, t(ze());
+					else if (e.type === "&_SEND_INIT_STATE" && !this.tabs[e.$window_uid]) {
+						if (!this.isSynced) {
+							this.isSynced = !0;
+							let { payload: n } = e.payload;
+							t(q(n));
+						}
+					} else n?.(e) && (V = e.$uuid, t(Object.assign(e, { $isSynced: !0 })));
+				} else e.type === "&_SEND_INIT_STATE" && !this.tabs[e.$window_uid] && (this.isSynced || (this.isSynced = !0, t(q(e.payload))));
+			}
+		}, this.messageChannel = e.channel, this.messageChannel.onmessage = this.handleMessage;
+	}
+};
+function Ue(e = K) {
+	let t = Q({
+		predicate: e.predicate,
+		blacklist: e.blacklist,
+		whitelist: e.whitelist,
+		channel: e.channel
+	}), n = new F(e?.channel ?? "redux-state-sync", e.broadcastChannelOptions), r = e.prepareState || ((e) => e), i = null;
+	return ({ getState: e, dispatch: a }) => (o) => (s) => {
+		if (i ||= new He({
+			channel: n,
+			allowed: t,
+			dispatch: a
+		}), s && typeof s == "object" && !("$uuid" in s)) {
+			let i = Z(s);
+			V = i.$uuid;
+			try {
+				"type" in s && (s.type === "&_SEND_INIT_STATE" && e() && (i.payload = r?.(e()), n.postMessage(i)), (t(i) || s.type === "&_GET_INIT_STATE") && n.postMessage(i));
+			} catch (e) {
+				console.error(e), console.error("Your browser doesn't support cross tab communication");
+			}
+		}
+		return o(typeof s == "object" ? Object.assign(s, { $isSynced: s?.$isSynced !== void 0 && s?.$isSynced }) : s);
+	};
+}
+function $(e, t = K.receiveState) {
+	return (n, r) => {
+		let i = n;
+		return r.type === "&_RECEIVE_INIT_STATE" && (i = t?.(n, r.payload)), e(i, r);
+	};
+}
+var We = $;
+function Ge({ dispatch: e }) {
+	e(Re());
+}
+function Ke({ dispatch: e }) {
+	e(Be());
+}
+//#endregion
+export { H as GET_INIT_STATE, G as INIT_MESSAGE_LISTENER, W as RECEIVE_INIT_STATE, U as SEND_INIT_STATE, X as WINDOW_STATE_SYNC_ID, $ as createReduxStateSync, Ue as createStateSyncMiddleware, Z as generateUuidForAction, Ke as initMessageListener, Ge as initStateWithPrevTab, Q as isActionAllowed, Ve as isActionSynced, We as withReduxStateSync };
