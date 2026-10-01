@@ -3,6 +3,11 @@
   "type": "module",
   "version": "1.0.1",
   "description": "Library wrapper for redux-state-sync",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jasondhoman/redux-state-sync.git"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
