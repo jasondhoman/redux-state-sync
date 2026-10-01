@@ -49,7 +49,7 @@ jobs:
         run: pnpm run lint
 
       - name: Build package
-        run: pnpm run build:lib
+        run: pnpm run build
 
       - name: Inspect package contents
         run: npm pack --dry-run
